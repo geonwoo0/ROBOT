@@ -1,0 +1,11 @@
+C:\Users\kjk92\Desktop\gw\C#\RobotMoveJ\bin\Debug\RobotMoveJ.dll
+C:\Users\kjk92\Desktop\gw\C#\RobotMoveJ\bin\Debug\RobotMoveJ.pdb
+C:\Users\kjk92\Desktop\gw\C#\RobotMoveJ\bin\Debug\RobotCore.dll
+C:\Users\kjk92\Desktop\gw\C#\RobotMoveJ\bin\Debug\NModbus.dll
+C:\Users\kjk92\Desktop\gw\C#\RobotMoveJ\bin\Debug\RobotCore.pdb
+C:\Users\kjk92\Desktop\gw\C#\RobotMoveJ\bin\Debug\NModbus.xml
+C:\Users\kjk92\Desktop\gw\C#\RobotMoveJ\obj\Debug\RobotMoveJ.csproj.AssemblyReference.cache
+C:\Users\kjk92\Desktop\gw\C#\RobotMoveJ\obj\Debug\RobotMoveJ.csproj.CoreCompileInputs.cache
+C:\Users\kjk92\Desktop\gw\C#\RobotMoveJ\obj\Debug\RobotMoveJ.csproj.Up2Date
+C:\Users\kjk92\Desktop\gw\C#\RobotMoveJ\obj\Debug\RobotMoveJ.dll
+C:\Users\kjk92\Desktop\gw\C#\RobotMoveJ\obj\Debug\RobotMoveJ.pdb

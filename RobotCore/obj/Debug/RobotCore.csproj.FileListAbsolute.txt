@@ -1,0 +1,9 @@
+C:\Users\kjk92\Desktop\gw\C#\RobotCore\bin\Debug\RobotCore.dll
+C:\Users\kjk92\Desktop\gw\C#\RobotCore\bin\Debug\RobotCore.pdb
+C:\Users\kjk92\Desktop\gw\C#\RobotCore\bin\Debug\NModbus.dll
+C:\Users\kjk92\Desktop\gw\C#\RobotCore\bin\Debug\NModbus.xml
+C:\Users\kjk92\Desktop\gw\C#\RobotCore\obj\Debug\RobotCore.csproj.AssemblyReference.cache
+C:\Users\kjk92\Desktop\gw\C#\RobotCore\obj\Debug\RobotCore.csproj.CoreCompileInputs.cache
+C:\Users\kjk92\Desktop\gw\C#\RobotCore\obj\Debug\RobotCore.csproj.Up2Date
+C:\Users\kjk92\Desktop\gw\C#\RobotCore\obj\Debug\RobotCore.dll
+C:\Users\kjk92\Desktop\gw\C#\RobotCore\obj\Debug\RobotCore.pdb
