@@ -1,0 +1,6 @@
+﻿<Solution>
+  <Project Path="RobotTest.csproj" Id="fa832f8b-266a-45a4-9cf8-5161bc7a5e6b" />
+  <Project Path="../RobotCore/RobotCore.csproj" Id="9fca0a53-e8d5-4f0b-a3fb-367a05690480" />
+  <Project Path="../RobotMoveJ/RobotMoveJ.csproj" Id="9fe49b14-473a-49aa-8e61-c9f2b20322b8" />
+  <Project Path="../RobotMoveL/RobotMoveL.csproj" Id="8bc8ecef-dcd4-4ef8-b9d2-25a0cbeb0c2e" />
+</Solution>
