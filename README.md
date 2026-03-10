@@ -5,72 +5,286 @@
 
 <img width="807" height="488" alt="image" src="https://github.com/user-attachments/assets/df86400b-270c-4921-a37c-7fdc1f516940" />
 
-## 🚀 핵심 기능 (Key Features)
+## 개요
 
-* **실시간 모니터링 (Real-time Polling)**: 로봇의 현재 Cartesian(X, Y, Z, R) 및 관절(J1~J4) 좌표를 실시간으로 읽어옵니다.
-* **통합 모션 제어 (Motion Control)**:
-  * `MoveJ` (Joint Motion): 각 축의 관절 각도를 지정하여 이동합니다.
-  * `MoveL` (Linear Motion): 직교 좌표계 기반으로 툴 끝단을 선형으로 이동합니다.
-* **조그 제어 (Jogging)**: J1~J4 축에 대한 개별 수동 조작(Jog Up/Down)을 지원합니다.
-* **웨이포인트 순차 구동 (Waypoint Sequencing)**: 
-  * 목표 지점들을 리스트에 추가하고 순차적으로 실행할 수 있습니다.
-  * 로봇의 Moving Flag를 감시하여 한 동작이 완료된 후 다음 동작을 수행하도록 동기화되어 있습니다.
-* **JSON 상태 저장/불러오기**: 교시(Teaching)한 웨이포인트 데이터를 `.json` 파일로 저장하고 로드할 수 있습니다.
+이 프로젝트는 **Modbus TCP**로 PLC/로봇 컨트롤러와 통신하여 로봇을 제어하는 **Windows Forms 기반 테스트 프로그램**과, 이를 구성하는 보조 라이브러리들로 이루어져 있습니다.
 
-## 🏗 시스템 아키텍처 및 모듈 구성 (Architecture)
+구성은 크게 4개 프로젝트입니다.
 
-솔루션은 크게 코어 통신 계층, 모션 실행 계층, 그리고 UI 테스트 계층으로 분리되어 있습니다.
+* **RobotCore**: Modbus 통신, 주소 변환, 로봇 포인트 패킷 인코딩
+* **RobotMoveJ**: Joint Move 실행 로직
+* **RobotMoveL**: Linear Move 실행 로직
+* **RobotTest**: 실제 테스트용 WinForms UI 애플리케이션
 
-* **`RobotCore`**
-  * `ModbusHelper.cs`: `NModbus` 라이브러리를 래핑하여 TCP 연결을 관리합니다. SD, SM, D, M 등의 PLC 주소 체계를 Modbus Address Offset으로 자동 변환합니다.
-  * `RcPointCodec.cs`: 로봇 컨트롤러가 요구하는 `RCPATH` 포인트 패킷(속도, 가감속, 좌표 등) 구조체를 100 워드(Word) 크기의 ushort 배열로 직렬화(Serialization)합니다.
-* **`RobotMoveJ` & `RobotMoveL`**
-  * `MoveJExecutor.cs` / `MoveLExecutor.cs`: Cartesian 좌표계와 Joint 좌표계를 구분하여 `RcPointInformation` 파라미터를 구성하고, 핸드셰이크 레지스터를 통해 제어기에 모션 실행 명령을 하달합니다.
-* **`RobotTest`**
-  * `Form1.cs`: 사용자 인터페이스(WinForms)를 제공합니다. 백그라운드 태스크를 통해 폴링(Polling) 루프를 돌며 상태를 갱신하고 제어 명령을 비동기로 처리합니다.
+이 프로그램으로 다음 작업을 수행할 수 있습니다.
 
-## 🔌 주요 Modbus 레지스터 맵 (Register Mapping)
+* 로봇 전원/동작 비트 제어
+* 정지 / E-STOP / 에러 리셋
+* 현재 위치 표시
+* J1~J4 조그(Jog) 제어
+* 단일 MoveJ / MoveL 실행
+* 현재 관절값을 리스트에 저장
+* 리스트 반복 실행
+* 웨이포인트 JSON 저장 / 불러오기
 
-내부적으로 사용되는 주요 메모리 주소 할당표입니다. 제어기와의 인터페이스 시 핵심적인 역할을 수행합니다.
+---
 
-### 1. 상태 모니터링 (Read)
-| 메모리 주소 | 타입 | 설명 |
-| :--- | :--- | :--- |
-| `SD4000` ~ `SD4006` | Float (32-bit) | 현재 직교 좌표 (X, Y, Z, R) |
-| `SD4020` ~ `SD4026` | Float (32-bit) | 현재 관절 각도 (J1, J2, J3, J4) |
-| `SM3001` | Coil (1-bit) | 로봇 이동 상태 (Moving Flag, true: 이동 중) |
+## 프로젝트 구조
 
-### 2. 모션 제어 (Write)
-| 메모리 주소 | 타입 | 설명 |
-| :--- | :--- | :--- |
-| `D1000` ~ `D1099` | Holding Register | 목표 모션 파라미터 블록 (100 words, RCPATH 구조체) |
-| `D100` | Holding Register | 명령 트리거 핸드셰이크 (1 기록) |
-| `M10` | Coil (1-bit) | 모션 준비 플래그 |
-| `SM3160` | Coil (1-bit) | 모션 실행(Execute) 펄스 코일 |
+```text
+RobotCore/
+  ModbusHelper.cs
+  RcPointCodec.cs
 
-### 3. 시스템 및 조그 제어 (System & Jog)
-| 메모리 주소 | 타입 | 설명 |
-| :--- | :--- | :--- |
-| `M0` | Coil (1-bit) | 서보 ON / OFF |
-| `M9998` | Coil (1-bit) | 로봇 정지 (STOP) |
-| `M9999` | Coil (1-bit) | 비상 정지 (E-STOP) |
-| `SM3004`, `SM3005` | Coil (1-bit) | 에러 리셋 코일 |
-| `M100` ~ `M107` | Coil (1-bit) | J1~J4 축 Jog Up/Down 동작 (버튼 누름 유지 시 동작) |
+RobotMoveJ/
+  MoveJExecutor.cs
 
-## ⚙️ 시작 가이드 (Getting Started)
+RobotMoveL/
+  MoveLExecutor.cs
 
-### 사전 요구 사항 (Prerequisites)
-* .NET Framework 4.7.2 이상
-* `NModbus` 패키지 참조
-* 로봇 컨트롤러 IP 설정: 기본값 `192.168.31.101`, Port `502` (`Form1.cs`의 `InitModbus()`에서 수정 가능)
+RobotTest/
+  Program.cs
+  Form1.cs
+  Form1.Designer.cs
+  RobotTest.csproj
+  RobotTest.slnx
+  waypoints.json
+  packages.config
+  packages/
+```
 
-### 사용 방법 (Usage)
-1. **연결 및 서보 구동**: 프로그램을 실행하면 자동으로 로봇과 Modbus 연결을 시도합니다. 연결 성공 후 `RBON` 버튼을 클릭하여 서보 전원을 투입합니다.
-2. **수동 조작 (Jogging)**: `J1+` ~ `J4-` 버튼을 마우스로 누르고 있는 동안 로봇이 해당 축으로 이동합니다.
-3. **포인트 교시 및 리스트 실행**:
-   * 조그를 통해 원하는 위치로 이동 후 `ADD` 버튼을 눌러 현재 위치를 리스트에 추가합니다.
-   * `Save JSON`을 통해 교시한 웨이포인트(`waypoints.json`)를 저장할 수 있습니다.
-   * `Run List` 버튼을 클릭하면 리스트 내의 모든 포인트를 J1~J4 관절 각도를 기준으로 순차 이동(MoveJ)합니다.
+추가로 `RobotTest/bin/Debug/` 아래에는 빌드된 실행 파일과 DLL이 포함되어 있습니다.
 
-## ⚠️ 안전 주의 사항 (Safety Precautions)
-본 애플리케이션을 통해 산업용 로봇을 제어할 때는 물리적 충돌에 유의해야 합니다. 테스트 전 속도(Speed)와 가감속(Acc, Dec) 파라미터를 낮게(예: 10% 이하) 설정하고, 문제 발생 시 즉시 `ESTOP` 버튼 또는 하드웨어 비상 정지 스위치를 누를 수 있도록 준비해 주십시오.
+---
+
+## 개발 환경 / 요구 사항
+
+* **운영체제**: Windows
+* **프레임워크**: .NET Framework 4.7.2
+* **UI**: Windows Forms
+* **통신 방식**: Modbus TCP
+* **외부 패키지**: NModbus 3.0.81
+
+### 참고
+
+* `RobotCore`, `RobotMoveJ`, `RobotMoveL`, `RobotTest` 모두 **.NET Framework 4.7.2** 대상으로 작성되어 있습니다.
+* `RobotCore`는 `NModbus.dll`을 참조합니다.
+* 패키지 경로는 `RobotTest/packages/NModbus.3.0.81/...` 기준으로 연결되어 있습니다.
+
+---
+
+## 솔루션 구성
+
+### 1) RobotCore
+
+공통 기능을 담당하는 핵심 라이브러리입니다.
+
+포함 기능:
+
+* `ModbusHelper`
+
+  * Modbus TCP 연결/해제
+  * Coil / Register 읽기/쓰기
+  * float 읽기/쓰기
+  * 프로젝트 전용 주소 변환 (`SD`, `SM`, `D`, `M`)
+  * 대량 레지스터 쓰기 분할 처리
+
+* `RcPointCodec`
+
+  * `RcPointInformation` 모델을 **100개의 Holding Register** 배열로 인코딩
+  * 32비트 값(float, uint, int)의 워드 순서 처리
+  * 로봇 포인트 데이터(`D0 ~ D99` 매핑용) 생성
+
+### 2) RobotMoveJ
+
+관절 좌표 기반 이동을 수행하는 라이브러리입니다.
+
+* `MoveJCommand`
+
+  * `J1`, `J2`, `J3`, `J4`
+  * `Speed`, `Acc`, `Dec`
+
+* `MoveJExecutor`
+
+  * Joint 좌표를 `RcPointInformation`에 채움
+  * `RefCoordSystem = 5`로 설정
+  * 포인트 패킷을 `D1000`부터 기록
+  * 실행 트리거 비트를 설정하여 이동 실행
+
+### 3) RobotMoveL
+
+직교 좌표 기반 선형 이동을 수행하는 라이브러리입니다.
+
+* `MoveLCommand`
+
+  * `X`, `Y`, `Z`
+  * `Q0Degree`
+  * `Speed`, `Acc`, `Dec`
+
+* `MoveLExecutor`
+
+  * 카테시안 좌표를 `RcPointInformation`에 채움
+  * `Q0Degree`를 이용해 `Q0` 값을 계산
+  * `Q1`, `Q2`, `Q3`는 0으로 설정
+  * `RefCoordSystem = 0`으로 설정
+
+### 4) RobotTest
+
+사용자가 직접 조작하는 WinForms 테스트 프로그램입니다.
+
+주요 기능:
+
+* 서버 IP/Port 연결
+* 로봇 상태 읽기
+* 현재 좌표 표시
+* Jog 버튼 제어
+* MoveJ / MoveL 실행
+* 웨이포인트 추가/삭제
+* JSON 저장 및 불러오기
+* 반복 실행
+
+---
+
+## 통신 개요
+
+프로그램은 Modbus TCP로 PLC 또는 로봇 컨트롤러에 접속합니다.
+
+기본 연결값 예시:
+
+* IP: `192.168.0.88`
+* Port: `502`
+* Slave ID: `1`
+
+실제 환경에서는 컨트롤러 설정에 맞게 변경해야 합니다.
+
+---
+
+## 주소 체계
+
+코드에는 프로젝트 전용 주소 변환 로직이 포함되어 있습니다.
+
+예:
+
+* `D` 레지스터 → Holding Register
+* `M` 비트 → Coil
+* `SD`, `SM` 특수 주소도 변환 처리
+
+즉, 코드에서 `D1000`, `M5`처럼 다루는 값을 실제 Modbus 주소로 변환하여 읽고 씁니다.
+
+---
+
+## MoveJ 동작 방식
+
+`MoveJExecutor`는 다음 순서로 동작합니다.
+
+1. Joint 명령값 생성
+2. `RcPointInformation` 구조체에 값 입력
+3. 포인트 패킷을 100워드 배열로 인코딩
+4. `D1000` 영역에 기록
+5. 실행 비트 ON
+6. 완료 대기 또는 짧은 지연 후 비트 OFF
+
+즉, 로봇이 이해하는 포인트 데이터 블록을 먼저 쓰고, 실행 비트로 시작시키는 구조입니다.
+
+---
+
+## MoveL 동작 방식
+
+`MoveLExecutor`는 다음 순서로 동작합니다.
+
+1. X/Y/Z/Q0Degree 입력
+2. 내부 포인트 구조체 생성
+3. 직교 좌표계 기준으로 패킷 생성
+4. `D1000`부터 데이터 기록
+5. 선형 이동 실행 비트 ON
+
+---
+
+## JSON 웨이포인트 형식
+
+리스트에 저장한 좌표는 JSON 파일로 저장할 수 있습니다.
+
+예시 형식:
+
+```json
+[
+  {
+    "J1": 0.0,
+    "J2": 10.0,
+    "J3": 20.0,
+    "J4": 0.0
+  },
+  {
+    "J1": 5.0,
+    "J2": 15.0,
+    "J3": 25.0,
+    "J4": 0.0
+  }
+]
+```
+
+실제 저장 형식은 코드의 직렬화 구조에 따라 약간 다를 수 있으므로, 현재 `waypoints.json` 샘플도 함께 확인하는 것이 좋습니다.
+
+---
+
+## 실행 방법
+
+### Visual Studio에서 실행
+
+1. Visual Studio로 솔루션 또는 프로젝트 열기
+2. NuGet/NModbus 참조 확인
+3. `RobotTest`를 시작 프로젝트로 설정
+4. 빌드 후 실행
+5. IP/Port 설정 후 Connect
+
+### Debug 실행 파일 사용
+
+압축파일 안에 이미 빌드 결과물이 포함되어 있다면 다음 경로에서 실행할 수 있습니다.
+
+* `RobotTest/bin/Debug/RobotTest.exe`
+
+단, DLL과 설정 파일이 함께 있어야 정상 실행됩니다.
+
+---
+
+## 사용 순서 예시
+
+1. 프로그램 실행
+2. 컨트롤러 IP/Port 입력
+3. Connect 버튼 클릭
+4. Servo ON 또는 동작 준비
+5. 현재 위치 확인
+6. Jog 또는 MoveJ/MoveL 테스트
+7. 필요한 좌표를 리스트에 저장
+8. JSON으로 저장하거나 다시 불러와 반복 실행
+
+---
+
+## 주의 사항
+
+* 실제 장비 연결 전 주소맵이 맞는지 반드시 확인해야 합니다.
+* E-STOP, Servo ON/OFF, Start 비트 주소가 현장 PLC와 다를 수 있습니다.
+* 조인트 단위와 각도 기준, Q0 회전 방향은 장비 세팅에 따라 다를 수 있습니다.
+* MoveL의 자세 계산은 단순화되어 있을 수 있으므로 실제 스카라 로봇 모델에 맞는 보정이 필요할 수 있습니다.
+* 테스트용 프로그램이므로 인터락, 충돌 방지, 안전 영역 확인 로직은 별도 검토가 필요합니다.
+
+---
+
+## 개선하면 좋은 점
+
+* 주소맵 설정을 JSON/INI로 분리
+* 통신 재시도 및 예외 로그 강화
+* 현재 알람 코드 표시 기능 추가
+* Move 완료 확인 로직 개선
+* 웨이포인트에 이름/속도/가감속 포함
+* SCARA 전용 자세 계산 보강
+* 반복 실행 시 취소/일시정지 기능 추가
+
+---
+
+## 한 줄 정리
+
+이 프로젝트는 **Modbus TCP 기반으로 SCARA 계열 로봇을 테스트 제어하기 위한 WinForms 프로그램 + 공통 제어 라이브러리**로 볼 수 있습니다.
+
+실무에서 쓰려면 **주소맵 정리, 안전 인터락, 완료 확인 로직, 예외 처리**를 먼저 보강하는 것이 좋습니다.
+
